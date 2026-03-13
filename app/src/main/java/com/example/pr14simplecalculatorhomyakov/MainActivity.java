@@ -1,101 +1,199 @@
 package com.example.pr14simplecalculatorhomyakov;
 
 import android.os.Bundle;
-import android.text.TextUtils;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity {
 
-    EditText etNum1, etNum2;
-    Button btnAdd, btnSub, btnMult, btnDiv;
-    TextView tvResult;
-    String oper = "";
+    private TextView tvDisplay;
+    private Button btn0, btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9;
+    private Button btnAdd, btnSubtract, btnMultiply, btnDivide, btnEquals;
+    private Button btnClear, btnBackspace, btnDot, btnPercent;
+    private Button btnMC, btnMPlus, btnMMinus, btnMR;
 
-    final int MENU_RESET_ID = 1;
-    final int MENU_QUIT_ID = 2;
+    private String currentInput = "0";
+    private String operator = "";
+    private double firstValue = 0;
+    private double memoryValue = 0;
+    private boolean isNewInput = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        initViews();
+        setListeners();
+    }
 
-        etNum1 = findViewById(R.id.etNum1);
-        etNum2 = findViewById(R.id.etNum2);
+    private void initViews() {
+        tvDisplay = findViewById(R.id.tvDisplay);
+
+        btn0 = findViewById(R.id.btn0);
+        btn1 = findViewById(R.id.btn1);
+        btn2 = findViewById(R.id.btn2);
+        btn3 = findViewById(R.id.btn3);
+        btn4 = findViewById(R.id.btn4);
+        btn5 = findViewById(R.id.btn5);
+        btn6 = findViewById(R.id.btn6);
+        btn7 = findViewById(R.id.btn7);
+        btn8 = findViewById(R.id.btn8);
+        btn9 = findViewById(R.id.btn9);
+
         btnAdd = findViewById(R.id.btnAdd);
-        btnSub = findViewById(R.id.btnSub);
-        btnMult = findViewById(R.id.btnMult);
-        btnDiv = findViewById(R.id.btnDiv);
-        tvResult = findViewById(R.id.tvResult);
+        btnSubtract = findViewById(R.id.btnSubtract);
+        btnMultiply = findViewById(R.id.btnMultiply);
+        btnDivide = findViewById(R.id.btnDivide);
+        btnEquals = findViewById(R.id.btnEquals);
+        btnPercent = findViewById(R.id.btnPercent);
 
-        btnAdd.setOnClickListener(this);
-        btnSub.setOnClickListener(this);
-        btnMult.setOnClickListener(this);
-        btnDiv.setOnClickListener(this);
+        btnClear = findViewById(R.id.btnClear);
+        btnBackspace = findViewById(R.id.btnBackspace);
+        btnDot = findViewById(R.id.btnDot);
+
+        btnMC = findViewById(R.id.btnMC);
+        btnMPlus = findViewById(R.id.btnMPlus);
+        btnMMinus = findViewById(R.id.btnMMinus);
+        btnMR = findViewById(R.id.btnMR);
     }
 
-    @Override
-    public void onClick(View v) {
-        float num1, num2, result = 0;
+    private void setListeners() {
+        // Цифровые кнопки
+        btn0.setOnClickListener(v -> onNumberClick("0"));
+        btn1.setOnClickListener(v -> onNumberClick("1"));
+        btn2.setOnClickListener(v -> onNumberClick("2"));
+        btn3.setOnClickListener(v -> onNumberClick("3"));
+        btn4.setOnClickListener(v -> onNumberClick("4"));
+        btn5.setOnClickListener(v -> onNumberClick("5"));
+        btn6.setOnClickListener(v -> onNumberClick("6"));
+        btn7.setOnClickListener(v -> onNumberClick("7"));
+        btn8.setOnClickListener(v -> onNumberClick("8"));
+        btn9.setOnClickListener(v -> onNumberClick("9"));
 
-        if (TextUtils.isEmpty(etNum1.getText().toString()) ||
-                TextUtils.isEmpty(etNum2.getText().toString())) {
-            tvResult.setText("Введите оба числа!");
-            return;
-        }
+        // Кнопки операций
+        btnAdd.setOnClickListener(v -> onOperatorClick("+"));
+        btnSubtract.setOnClickListener(v -> onOperatorClick("-"));
+        btnMultiply.setOnClickListener(v -> onOperatorClick("*"));
+        btnDivide.setOnClickListener(v -> onOperatorClick("/"));
 
-        num1 = Float.parseFloat(etNum1.getText().toString());
-        num2 = Float.parseFloat(etNum2.getText().toString());
+        // Кнопка равно
+        btnEquals.setOnClickListener(v -> onEqualsClick());
 
-        if (v.getId() == R.id.btnAdd) {
-            oper = "+";
-            result = num1 + num2;
-        } else if (v.getId() == R.id.btnSub) {
-            oper = "-";
-            result = num1 - num2;
-        } else if (v.getId() == R.id.btnMult) {
-            oper = "*";
-            result = num1 * num2;
-        } else if (v.getId() == R.id.btnDiv) {
-            oper = "/";
-            if (num2 == 0) {
-                tvResult.setText("Ошибка: деление на 0");
-                return;
+        // Кнопка процента
+        btnPercent.setOnClickListener(v -> onPercentClick());
+
+        // Кнопки управления
+        btnClear.setOnClickListener(v -> onClearClick());
+        btnBackspace.setOnClickListener(v -> onBackspaceClick());
+        btnDot.setOnClickListener(v -> onDotClick());
+
+        // Кнопки памяти
+        btnMC.setOnClickListener(v -> {
+            memoryValue = 0;
+        });
+
+        btnMPlus.setOnClickListener(v -> {
+            memoryValue += Double.parseDouble(currentInput);
+        });
+
+        btnMMinus.setOnClickListener(v -> {
+            memoryValue -= Double.parseDouble(currentInput);
+        });
+
+        btnMR.setOnClickListener(v -> {
+            currentInput = String.valueOf(memoryValue);
+            tvDisplay.setText(currentInput);
+            isNewInput = true;
+        });
+    }
+
+    private void onNumberClick(String number) {
+        if (isNewInput) {
+            currentInput = number;
+            isNewInput = false;
+        } else {
+            if (currentInput.equals("0")) {
+                currentInput = number;
+            } else {
+                currentInput += number;
             }
-            result = num1 / num2;
         }
-
-        tvResult.setText(num1 + " " + oper + " " + num2 + " = " + result);
+        tvDisplay.setText(currentInput);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(0, MENU_RESET_ID, 0, "Очистить");
-        menu.add(0, MENU_QUIT_ID, 0, "Выход");
-        return true;
+    private void onOperatorClick(String op) {
+        if (!operator.isEmpty()) {
+            onEqualsClick();
+        }
+        firstValue = Double.parseDouble(currentInput);
+        operator = op;
+        isNewInput = true;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        if (id == MENU_RESET_ID) {
-            etNum1.setText("");
-            etNum2.setText("");
-            tvResult.setText("Результат:");
-            return true;
-        } else if (id == MENU_QUIT_ID) {
-            finish();
-            return true;
+    private void onEqualsClick() {
+        if (operator.isEmpty()) return;
+
+        double secondValue = Double.parseDouble(currentInput);
+        double result = 0;
+
+        switch (operator) {
+            case "+":
+                result = firstValue + secondValue;
+                break;
+            case "-":
+                result = firstValue - secondValue;
+                break;
+            case "*":
+                result = firstValue * secondValue;
+                break;
+            case "/":
+                if (secondValue != 0) {
+                    result = firstValue / secondValue;
+                } else {
+                    tvDisplay.setText("Ошибка");
+                    currentInput = "0";
+                    operator = "";
+                    isNewInput = true;
+                    return;
+                }
+                break;
         }
-        return super.onOptionsItemSelected(item);
+
+        currentInput = String.valueOf(result);
+        tvDisplay.setText(currentInput);
+        operator = "";
+        isNewInput = true;
+    }
+
+    private void onPercentClick() {
+        double value = Double.parseDouble(currentInput);
+        currentInput = String.valueOf(value / 100);
+        tvDisplay.setText(currentInput);
+    }
+
+    private void onClearClick() {
+        currentInput = "0";
+        operator = "";
+        firstValue = 0;
+        isNewInput = true;
+        tvDisplay.setText(currentInput);
+    }
+
+    private void onBackspaceClick() {
+        if (currentInput.length() > 1) {
+            currentInput = currentInput.substring(0, currentInput.length() - 1);
+        } else {
+            currentInput = "0";
+        }
+        tvDisplay.setText(currentInput);
+    }
+
+    private void onDotClick() {
+        if (!currentInput.contains(".")) {
+            currentInput += ".";
+            tvDisplay.setText(currentInput);
+        }
     }
 }
